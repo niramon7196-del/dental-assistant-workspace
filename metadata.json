@@ -1,0 +1,6 @@
+{
+  "name": "AI Dental Assistant Workspace",
+  "description": "A personal intelligent work platform for dental assistants to manage tasks, lab orders, patient follow-ups, and AI inbox extractions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

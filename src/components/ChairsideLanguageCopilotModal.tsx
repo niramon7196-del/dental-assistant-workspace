@@ -126,6 +126,8 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
   } | null>(null);
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [confirmResetPending, setConfirmResetPending] = useState(false);
+  const [langOther, setLangOther] = useState(false);
+  const [caseOther, setCaseOther] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognitionInstanceLike | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
@@ -818,145 +820,123 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
           </div>
         </div>
 
-        {/* Setup Bar: Language + Case Type + Sequential Progress */}
-        <div className="px-4 sm:px-5 py-2.5 border-b border-white/15 space-y-2.5 shrink-0">
-          {/* Language Chips + Custom Free-Text Language */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] font-semibold text-cyan-200 mr-1 shrink-0">
-              ภาษาคนไข้:
-            </span>
-            {CHAIRSIDE_LANGUAGE_PRESETS.map((preset) => {
-              const isSelected =
-                !session.customLanguageName.trim() && session.selectedPresetId === preset.id;
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() =>
+        {/* Setup Bar (simplified): 2 dropdowns + 1 start button + 1 status line */}
+        <div className="px-4 sm:px-5 py-3 border-b border-white/15 space-y-2 shrink-0">
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 min-w-[150px]">
+              <span className="text-xs font-semibold text-cyan-200">ภาษาคนไข้</span>
+              <select
+                value={
+                  langOther || session.customLanguageName.trim()
+                    ? '__other'
+                    : session.selectedPresetId
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === '__other') {
+                    setLangOther(true);
+                  } else {
+                    setLangOther(false);
                     setSession((prev) => ({
                       ...prev,
-                      selectedPresetId: preset.id,
+                      selectedPresetId: v as typeof prev.selectedPresetId,
                       customLanguageName: ''
-                    }))
+                    }));
                   }
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer ${
-                    isSelected
-                      ? 'bg-cyan-500/30 border-cyan-300/65 text-white font-semibold'
-                      : 'crystal-tile border-white/20 text-slate-200 hover:text-white'
-                  }`}
-                >
-                  <span className="mr-1">{preset.flag}</span>
-                  <span>{preset.labelTh.split(' ')[0]}</span>
-                </button>
-              );
-            })}
-            <input
-              type="text"
-              value={session.customLanguageName}
-              onChange={(e) =>
-                setSession((prev) => ({ ...prev, customLanguageName: e.target.value }))
-              }
-              placeholder="พิมพ์ภาษาอื่นได้ทุกภาษา (เช่น อาหรับ, ไทใหญ่, Tagalog)..."
-              className="glass-input flex-1 min-w-[200px] px-2.5 py-1 rounded-lg text-[11px]"
-            />
-          </div>
+                }}
+                className="glass-input min-h-[44px] px-3 rounded-xl text-sm font-medium"
+              >
+                {CHAIRSIDE_LANGUAGE_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.flag} {preset.labelTh.split(' ')[0]}
+                  </option>
+                ))}
+                <option value="__other">🌐 ภาษาอื่น (พิมพ์เอง)</option>
+              </select>
+            </label>
+            {(langOther || session.customLanguageName.trim()) && (
+              <input
+                type="text"
+                value={session.customLanguageName}
+                onChange={(e) =>
+                  setSession((prev) => ({ ...prev, customLanguageName: e.target.value }))
+                }
+                placeholder="เช่น อาหรับ, ไทใหญ่, Tagalog"
+                className="glass-input min-h-[44px] w-48 px-3 rounded-xl text-sm"
+              />
+            )}
 
-          {/* Case Selector + Start Case CTA + Device Capability Hint */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-violet-200 mr-1 shrink-0">
-                ประเภทเคส:
-              </span>
-              {CHAIRSIDE_CASE_PRESETS.map((c) => {
-                const isSelected =
-                  !session.customCaseText.trim() && session.casePresetId === c.id;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() =>
-                      setSession((prev) => ({
-                        ...prev,
-                        casePresetId: c.id,
-                        customCaseText: ''
-                      }))
-                    }
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border cursor-pointer ${
-                      isSelected
-                        ? 'bg-violet-500/35 border-violet-300/65 text-white font-semibold'
-                        : 'crystal-tile border-white/20 text-slate-200 hover:text-white'
-                    }`}
-                  >
+            <label className="flex flex-col gap-1 min-w-[170px]">
+              <span className="text-xs font-semibold text-violet-200">ประเภทเคส</span>
+              <select
+                value={
+                  caseOther || session.customCaseText.trim() ? '__other' : session.casePresetId
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === '__other') {
+                    setCaseOther(true);
+                  } else {
+                    setCaseOther(false);
+                    setSession((prev) => ({
+                      ...prev,
+                      casePresetId: v as typeof prev.casePresetId,
+                      customCaseText: ''
+                    }));
+                  }
+                }}
+                className="glass-input min-h-[44px] px-3 rounded-xl text-sm font-medium"
+              >
+                {CHAIRSIDE_CASE_PRESETS.map((c) => (
+                  <option key={c.id} value={c.id}>
                     {c.labelTh}
-                  </button>
-                );
-              })}
+                  </option>
+                ))}
+                <option value="__other">✏️ เคสอื่น (พิมพ์เอง)</option>
+              </select>
+            </label>
+            {(caseOther || session.customCaseText.trim()) && (
               <input
                 type="text"
                 value={session.customCaseText}
                 onChange={(e) =>
                   setSession((prev) => ({ ...prev, customCaseText: e.target.value }))
                 }
-                placeholder="หรือพิมพ์อาการ/เคสอื่น..."
-                className="glass-input w-40 sm:w-48 px-2.5 py-1 rounded-lg text-[11px]"
+                placeholder="พิมพ์อาการ/เคส"
+                className="glass-input min-h-[44px] w-48 px-3 rounded-xl text-sm"
               />
-            </div>
+            )}
 
             <button
               type="button"
               disabled={isLoading}
               onClick={() => void handleStartCase()}
-              className="crystal-btn inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 text-white text-xs font-bold cursor-pointer disabled:opacity-50 shrink-0"
+              className="crystal-btn inline-flex items-center justify-center gap-2 min-h-[44px] px-4 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 text-white text-sm font-bold cursor-pointer disabled:opacity-50 shrink-0 ml-auto"
             >
               {isLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-4 h-4" />
               )}
-              <span>
-                {session.messages.length === 0
-                  ? 'เริ่มเคส • ให้ AI เปิดคำถามซักประวัติ'
-                  : 'ให้ AI เปิดซักประวัติใหม่'}
-              </span>
+              <span>{session.messages.length === 0 ? 'เริ่มซักประวัติ' : 'เริ่มซักประวัติใหม่'}</span>
             </button>
           </div>
 
-          {/* Stage Progress Strip + Honest Audio Capability Status */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-            <div className="flex flex-wrap items-center gap-1">
-              {STAGE_STEPS.map((st) => {
-                const isCurrent = session.currentStage === st.id;
-                const isDoneConfirmed =
-                  st.id === 'confirmed_extraction' && session.confirmedExtraction;
-                return (
-                  <span
-                    key={st.id}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-medium border ${
-                      isDoneConfirmed
-                        ? 'bg-emerald-500/30 border-emerald-300/60 text-emerald-100 font-bold'
-                        : isCurrent
-                        ? 'bg-cyan-500/25 border-cyan-300/55 text-cyan-100 font-semibold'
-                        : 'bg-white/5 border-white/10 text-slate-300/75'
-                    }`}
-                  >
-                    {st.labelTh}
-                  </span>
-                );
-              })}
-            </div>
-            <div className="text-[10px] text-slate-300 flex items-center gap-2">
-              <span>
-                {hasSpeechRecognition ? '🎙️ ไมค์: พร้อม' : '🎙️ ไมค์: พิมพ์/แตะแทน'}
-              </span>
-              <span>·</span>
-              <span>
-                {hasSpeechSynthesis
-                  ? matchingTargetVoice
-                    ? `🔊 เสียง${resolvedLang.displayName.split(' ')[0]}: พร้อม`
-                    : `🔊 เสียงระบบไม่มี${resolvedLang.displayName.split(' ')[0]} (ใช้ปุ่มขยายตัวใหญ่ได้)`
-                  : '🔊 ไม่มีเสียงระบบ (ใช้ปุ่มขยายตัวใหญ่ได้)'}
-              </span>
-            </div>
+          {/* One status line: current step + only real warnings */}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+            <span className="font-semibold text-cyan-100">
+              {(() => {
+                const idx = STAGE_STEPS.findIndex((st) => st.id === session.currentStage);
+                const cur = STAGE_STEPS[idx >= 0 ? idx : 0];
+                return `ขั้นตอน ${(idx >= 0 ? idx : 0) + 1}/${STAGE_STEPS.length} · ${cur.labelTh}`;
+              })()}
+            </span>
+            <span className="text-amber-200/90">
+              {!hasSpeechSynthesis || !matchingTargetVoice
+                ? `ไม่มีเสียงอ่าน${resolvedLang.displayName.split(' ')[0]}ในเครื่องนี้ ใช้ปุ่ม "ขยายให้คนไข้อ่าน" แทน`
+                : ''}
+              {!hasSpeechRecognition ? ' · ไมค์ไม่รองรับ ใช้การพิมพ์แทน' : ''}
+            </span>
           </div>
         </div>
 

@@ -27,6 +27,7 @@ const VALID_CATEGORIES = [
   'Other'
 ] as const;
 
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 const GEMINI_REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS) || 25_000;
 
 function getServerApiKey(): string {
@@ -132,7 +133,7 @@ async function createApp() {
     res.json({
       ok: true,
       aiConfigured,
-      model: 'gemini-4-hydrogen'
+      model: GEMINI_MODEL
     });
   });
 
@@ -258,7 +259,7 @@ async function createApp() {
       const uiLangLabel = uiLanguage === 'en' ? 'English' : 'Thai';
 
       const response = await ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         contents: { parts },
         config: {
           systemInstruction: `You are a meticulous AI dental assistant task extractor.
@@ -357,7 +358,7 @@ Rules:
       const parsed = JSON.parse(rawText);
       res.json({
         ok: true,
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         data: parsed
       });
     } catch (err) {
@@ -485,7 +486,7 @@ Rules:
       ].join('\n\n');
 
       const response = await ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         contents: promptBody,
         config: {
           systemInstruction: `You are an authorized Dental Assistant Platform AI Engine operating strictly inside a single isolated workspace.
@@ -584,7 +585,7 @@ Security & Boundary Rules:
       const parsed = JSON.parse(rawText);
       res.json({
         ok: true,
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         scopedModules: allowedModules,
         data: parsed
       });
@@ -682,7 +683,7 @@ Security & Boundary Rules:
         .join('\n\n');
 
       const response = await ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         contents: promptBody,
         config: {
           systemInstruction: `You are a helpful Thai Dental Assistant Copilot drafting polite, natural, clinic-ready replies for Facebook Page & LINE OA messages.
@@ -752,7 +753,7 @@ Rules:
       const parsed = JSON.parse(rawText);
       res.json({
         ok: true,
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         data: parsed
       });
     } catch (err) {
@@ -872,7 +873,7 @@ Rules:
       });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         contents: { parts },
         config: {
           systemInstruction: `You are the AI Dental Assistant Copilot embedded in a Thai/English Dental Assistant Dashboard.
@@ -936,7 +937,7 @@ Write "summaryReply" and "draftMessage" naturally in ${uiLangLabel}.
       const parsed = JSON.parse(rawText);
       res.json({
         ok: true,
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         data: parsed
       });
     } catch (err) {
@@ -997,7 +998,7 @@ Write "summaryReply" and "draftMessage" naturally in ${uiLangLabel}.
       ].join('\n\n');
 
       const response = await ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         contents: promptBody,
         config: {
           systemInstruction: `You are a dental clinic quality & patient experience analyst supporting a Thai dental assistant team.
@@ -1071,7 +1072,7 @@ Write ALL human-readable fields strictly in ${uiLangLabel}:
       const parsed = JSON.parse(rawText);
       res.json({
         ok: true,
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         data: parsed
       });
     } catch (err) {
@@ -1197,7 +1198,7 @@ Write ALL human-readable fields strictly in ${uiLangLabel}:
       ].join('\n\n');
 
       const response = await ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         contents: promptParts,
         config: {
           systemInstruction: `You are a Chairside Multilingual Dental Assistant Copilot helping a Thai dental assistant communicate clearly with a patient at the dental chair.
@@ -1325,7 +1326,7 @@ Always provide "pronunciationHint" as a short easy Thai-phonetic or Latin phonet
       const parsed = JSON.parse(rawText);
       res.json({
         ok: true,
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         data: parsed
       });
     } catch (err) {

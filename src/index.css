@@ -611,5 +611,65 @@ td {
   word-break: break-word;
   overflow-wrap: anywhere;
 }
+/* ==========================================================================
+   AI Dental Assistant Workspace — Frosted Dark Scrim & Layout Override
+   ========================================================================== */
+
+:root {
+  --scrim-card: rgba(12, 16, 32, 0.82);
+  --scrim-sidebar: rgba(15, 20, 42, 0.90);
+  --scrim-border: rgba(167, 139, 250, 0.28);
+  --ink-white: #F8FAFC;
+  --ink-body: #E2E8F0;
+  --ink-cyan: #22D3EE;
+  --ink-lavender: #C4B5FD;
+  --ink-pink: #F472B6;
+  --ink-mint: #34D399;
+  --ink-gold: #FBBF24;
+}
+
+/* 1. กล่องข้อความ การ์ด แถวตาราง และหน้าต่างป๊อปอัป เป็นฝ้าเข้มโปร่งแสง เบาเครื่องบน iPad */
+.glass-modal,
+.glass-card,
+[class*="bg-white/"],
+[class*="bg-slate-900/"],
+[class*="bg-indigo-950/"],
+[class*="backdrop-blur"],
+table tbody tr {
+  background-color: var(--scrim-card) !important;
+  border-color: var(--scrim-border) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 12px rgba(139, 92, 246, 0.14) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+/* 2. ตัวอักษรคมชัด อ่านง่าย ไม่กลืนไปกับภาพพื้นหลัง */
+h1, h2, h3, h4 {
+  color: var(--ink-white) !important;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.25) !important;
+}
+
+p, span, td, th, label {
+  color: var(--ink-body);
+}
+
+/* 3. เมนูฝั่งซ้ายแนวตั้งชิดขอบบน เลื่อนลื่นบน iPad */
+aside {
+  top: 0 !important;
+  height: 100vh !important;
+  max-height: 100dvh !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  background-color: var(--scrim-sidebar) !important;
+  border-right: 1px solid var(--scrim-border) !important;
+}
+
+/* 4. ป้องกันปุ่มโดนบีบหรือข้อความยาวล้นขอบจอ */
+button,
+[role="button"] {
+  max-width: 100%;
+  white-space: nowrap;
+}
+
 
 

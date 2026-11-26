@@ -27,6 +27,8 @@ const VALID_CATEGORIES = [
   'Other'
 ] as const;
 
+const GEMINI_REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS) || 25_000;
+
 function getServerApiKey(): string {
   const key = (process.env.GEMINI_API_KEY || '').trim();
   if (!key || key === 'MY_GEMINI_API_KEY') {
@@ -41,6 +43,8 @@ function getGenAIClient(): GoogleGenAI | null {
   return new GoogleGenAI({
     apiKey,
     httpOptions: {
+      // Fail fast on slow network / quota stalls so the UI can show a clear fallback state
+      timeout: GEMINI_REQUEST_TIMEOUT_MS,
       headers: {
         'User-Agent': 'aistudio-build'
       }
@@ -74,6 +78,10 @@ function extractUpstreamErrorInfo(
     lower.includes('econnrefused') ||
     lower.includes('enotfound') ||
     lower.includes('etimedout') ||
+    lower.includes('timeout') ||
+    lower.includes('timed out') ||
+    lower.includes('aborted') ||
+    (err instanceof Error && err.name === 'AbortError') ||
     lower.includes('fetch failed');
 
   if (isUnavailable) {

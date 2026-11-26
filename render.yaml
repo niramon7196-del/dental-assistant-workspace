@@ -1,0 +1,21 @@
+# One-click hosting on Render (free web service). Env vars marked sync:false are set in the dashboard.
+services:
+  - type: web
+    name: dental-assistant-workspace
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false

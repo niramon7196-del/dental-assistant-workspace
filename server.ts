@@ -137,6 +137,32 @@ async function createApp() {
     });
   });
 
+  // --- Queue relay: lets the iPad publish the queue and a counter PC (TV mode) read it ---
+  // In-memory only (resets on restart), keyed by a private pairing code. Items hold queue no./name/room/status only.
+  const queueRelay = new Map<string, { items: unknown[]; ts: number }>();
+  const QUEUE_CODE_RE = /^[A-Za-z0-9_-]{4,40}$/;
+
+  app.post('/api/queue/:code', (req: Request, res: Response) => {
+    const code = String(req.params.code || '');
+    if (!QUEUE_CODE_RE.test(code)) return res.status(400).json({ error: 'invalid code' });
+    const items = Array.isArray(req.body?.items) ? req.body.items.slice(0, 200) : null;
+    if (!items) return res.status(400).json({ error: 'items required' });
+    if (queueRelay.size > 500 && !queueRelay.has(code)) {
+      const oldest = [...queueRelay.entries()].sort((a, b) => a[1].ts - b[1].ts)[0];
+      if (oldest) queueRelay.delete(oldest[0]);
+    }
+    queueRelay.set(code, { items, ts: Date.now() });
+    res.json({ ok: true, ts: Date.now() });
+  });
+
+  app.get('/api/queue/:code', (req: Request, res: Response) => {
+    const code = String(req.params.code || '');
+    if (!QUEUE_CODE_RE.test(code)) return res.status(400).json({ error: 'invalid code' });
+    res.set('Cache-Control', 'no-store');
+    const entry = queueRelay.get(code);
+    res.json({ items: entry?.items ?? null, ts: entry?.ts ?? 0 });
+  });
+
   app.post('/api/extract', async (req: Request, res: Response) => {
     try {
       const ai = getGenAIClient();

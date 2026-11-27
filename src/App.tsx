@@ -126,11 +126,12 @@ export default function App() {
   } = useWorkspace();
 
   const tvQueryState = useMemo(() => {
-    if (typeof window === 'undefined') return { isTv: false, wsId: '' };
+    if (typeof window === 'undefined') return { isTv: false, wsId: '', code: '' };
     const params = new URLSearchParams(window.location.search);
     return {
       isTv: params.get('tv') === '1',
-      wsId: params.get('ws') || ''
+      wsId: params.get('ws') || '',
+      code: params.get('code') || ''
     };
   }, []);
 
@@ -221,6 +222,7 @@ export default function App() {
             workspaceId={targetWs.id}
             workspaceName={getWorkspaceDisplayName(targetWs, language)}
             isStandaloneWindow
+            relayCode={tvQueryState.code}
           />
         </Suspense>
       </ModuleErrorBoundary>

@@ -3,6 +3,7 @@ import { MonitorPlay, Maximize2, Minimize2, Volume2, X, Clock, ArrowRight } from
 import { QueueItem } from '../types/dental';
 import { useLanguage } from '../contexts/LanguageContext';
 import { readQueueItemsDirect } from '../services/workspaceStorage';
+import { fetchRemoteQueue } from '../services/queueRelay';
 import { formatNumberByLanguage } from '../utils/i18n';
 
 interface TvQueueDisplayProps {
@@ -11,6 +12,8 @@ interface TvQueueDisplayProps {
   items?: QueueItem[];
   isStandaloneWindow?: boolean;
   onClose?: () => void;
+  /** Pairing code: when set, queue is polled from the server (iPad -> counter PC). */
+  relayCode?: string;
 }
 
 export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
@@ -18,7 +21,8 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
   workspaceName,
   items: propItems,
   isStandaloneWindow = false,
-  onClose
+  onClose,
+  relayCode
 }) => {
   const { t, language } = useLanguage();
   const [liveItems, setLiveItems] = useState<QueueItem[]>(() =>
@@ -83,6 +87,59 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
     };
   }, [workspaceId]);
 
+  // Cross-device sync: poll the server relay every 2s (counter PC shows what the iPad publishes)
+  const [soundOn, setSoundOn] = useState(false);
+  const spokenRef = React.useRef<string>('');
+  const firstPollRef = React.useRef(true);
+  useEffect(() => {
+    if (!relayCode) return;
+    let stop = false;
+    const tick = async () => {
+      const remote = await fetchRemoteQueue(relayCode);
+      if (stop || !remote) return;
+      setLiveItems(remote);
+    };
+    void tick();
+    const id = setInterval(tick, 2000);
+    return () => {
+      stop = true;
+      clearInterval(id);
+    };
+  }, [relayCode]);
+
+  // Speak newly called queue on the TV/PC (needs one tap on "เปิดเสียง" because of browser autoplay rules)
+  useEffect(() => {
+    const latest = liveItems
+      .filter((q) => q.status === 'called')
+      .sort((a, b) => (b.calledAt || '').localeCompare(a.calledAt || ''))[0];
+    if (!latest) return;
+    const sig = `${latest.id}|${latest.calledAt || ''}`;
+    if (firstPollRef.current) {
+      firstPollRef.current = false;
+      spokenRef.current = sig;
+      return;
+    }
+    if (sig === spokenRef.current) return;
+    spokenRef.current = sig;
+    if (!soundOn || !('speechSynthesis' in window)) return;
+    try {
+      const room = latest.roomName || '';
+      const text =
+        language === 'en'
+          ? `Calling ${latest.patientName}, queue ${latest.queueNumber}, please proceed to ${room}`
+          : `ขอเชิญคุณ ${latest.patientName.replace(/^คุณ\s*/i, '')} หมายเลขคิว ${latest.queueNumber} เข้า ${room} ค่ะ`;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = language === 'en' ? 'en-US' : 'th-TH';
+      u.rate = 0.95;
+      const th = window.speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith('th'));
+      if (th && language === 'th') u.voice = th;
+      window.speechSynthesis.speak(u);
+    } catch {
+      // ignore
+    }
+  }, [liveItems, soundOn, language]);
+
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -130,6 +187,17 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
             <Clock className="w-5 h-5 text-violet-300" />
             <span>{nowClock}</span>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setSoundOn((v) => !v)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-sm font-semibold cursor-pointer ${
+              soundOn ? 'bg-emerald-600/30 border-emerald-300/50 text-emerald-100' : 'crystal-tile border-white/20 text-slate-100'
+            }`}
+          >
+            <Volume2 className="w-4 h-4" />
+            <span>{soundOn ? 'เสียงเรียก: เปิด' : 'แตะเพื่อเปิดเสียงเรียก'}</span>
+          </button>
 
           <button
             type="button"

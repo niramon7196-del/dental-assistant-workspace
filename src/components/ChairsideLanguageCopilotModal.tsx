@@ -128,6 +128,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
   const [confirmResetPending, setConfirmResetPending] = useState(false);
   const [langOther, setLangOther] = useState(false);
   const [caseOther, setCaseOther] = useState(false);
+  const [showPatientQuick, setShowPatientQuick] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognitionInstanceLike | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
@@ -1201,7 +1202,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
             {session.nextQuestionOptions.length > 0 && (
               <div className="space-y-1">
                 <span className="text-[10px] font-semibold text-violet-200">
-                  ตัวเลือกคำถาม/คำตอบถัดไปตามลำดับ (แตะเพื่อส่งให้คนไข้):
+                  ขั้นถัดไป — แตะ 1 ปุ่มเพื่อส่งให้คนไข้
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {session.nextQuestionOptions.map((opt, idx) => (
@@ -1226,10 +1227,15 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
             {/* Quick Tap Patient Answers (helps patient reply easily on iPad) */}
             {session.patientQuickAnswerHints.length > 0 && (
               <div className="space-y-1">
-                <span className="text-[10px] font-semibold text-emerald-200">
-                  ตัวเลือกคำตอบด่วนฝั่งคนไข้ (คนไข้แตะตอบได้ทันที):
-                </span>
-                <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowPatientQuick((v) => !v)}
+                  aria-expanded={showPatientQuick}
+                  className="crystal-tile min-h-[44px] px-3 rounded-xl border border-emerald-300/40 text-[11px] font-semibold text-emerald-100 cursor-pointer"
+                >
+                  {showPatientQuick ? 'ซ่อนคำตอบด่วนให้คนไข้แตะ ▲' : 'ยื่น iPad ให้คนไข้แตะตอบ ▼'}
+                </button>
+                <div className={`${showPatientQuick ? 'flex' : 'hidden'} flex-wrap gap-1.5`}>
                   {session.patientQuickAnswerHints.map((hint: ChairsidePatientHint, idx) => (
                     <button
                       key={`${hint.thaiMeaning}-${idx}`}

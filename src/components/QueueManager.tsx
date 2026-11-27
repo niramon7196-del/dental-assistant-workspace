@@ -1,3 +1,4 @@
+import { getTvCode } from '../services/queueRelay';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -221,7 +222,7 @@ export const QueueManager: React.FC<QueueManagerProps> = ({
   };
 
   const handleCopyTvLink = async () => {
-    const url = `${window.location.origin}/?tv=1&ws=${encodeURIComponent(activeWorkspace.id)}`;
+    const url = `${window.location.origin}/?tv=1&code=${encodeURIComponent(getTvCode())}`;
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -381,6 +382,7 @@ export const QueueManager: React.FC<QueueManagerProps> = ({
             )}
             <span>{copiedTvLink ? t('queueTvCopiedMsg') : t('queueTvCopyLinkBtn')}</span>
           </button>
+          <span className="text-[11px] text-slate-300 font-mono">รหัสจอ: {getTvCode()}</span>
 
           <button
             type="button"

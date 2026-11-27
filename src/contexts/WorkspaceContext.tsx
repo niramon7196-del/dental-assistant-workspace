@@ -1,3 +1,4 @@
+import { publishQueue } from '../services/queueRelay';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DentureCase,
@@ -809,6 +810,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } catch {
           // BroadcastChannel optional on older WebViews
         }
+        publishQueue(nextQueue);
         return { ...prev, queueItems: nextQueue };
       });
     },

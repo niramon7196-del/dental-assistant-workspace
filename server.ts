@@ -1259,7 +1259,8 @@ Rules by Action:
   * Set "assistantThai" to the assistant's Thai message (cleanly formatted) and translate accurately into "${targetLanguage}" in "assistantTargetLang".
   * Keep/update "clinicalSummaryThai", provide 3-4 sequential "nextQuestionOptions", and 3-4 matching "patientQuickAnswerHints".
 
-Always provide "pronunciationHint" as a short easy Thai-phonetic or Latin phonetic reading guide for "assistantTargetLang" if ${targetLanguage} uses a non-Thai script (or "" if English/easy). Never fabricate medical facts not stated in the conversation.`,
+MANDATORY output completeness: "assistantTargetLang" and EVERY "nextQuestionOptions[].textTargetLang" and EVERY "patientQuickAnswerHints[].textTargetLang" MUST be real text written in the native script of ${targetLanguage} (e.g. Burmese script, Lao script, Khmer script). Never leave them empty, never write Thai or English instead, never write only a romanization.
+Always provide "pronunciationHint" (and "nextQuestionOptions[].pronunciationHint") as an easy Thai-letter phonetic reading guide (คำอ่านภาษาไทย, syllables separated by "-") for the target text whenever ${targetLanguage} uses a non-Thai script such as Burmese, Lao, Khmer, Chinese, Japanese, Arabic (use "" only if the target is English or Latin-script and easy). Never fabricate medical facts not stated in the conversation.`,
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -1350,6 +1351,32 @@ Always provide "pronunciationHint" as a short easy Thai-phonetic or Latin phonet
       }
 
       const parsed = JSON.parse(rawText);
+      // Guard: the patient-facing text must exist, otherwise the UI shows nothing for the patient.
+      if (
+        typeof parsed?.assistantTargetLang !== 'string' ||
+        !parsed.assistantTargetLang.trim()
+      ) {
+        res.status(502).json({
+          ok: false,
+          error:
+            uiLanguage === 'en'
+              ? 'AI did not return patient-language text. Please try again.'
+              : 'AI ไม่ได้ส่งข้อความภาษาคนไข้กลับมา กรุณากดลองใหม่อีกครั้ง'
+        });
+        return;
+      }
+      if (Array.isArray(parsed.nextQuestionOptions)) {
+        parsed.nextQuestionOptions = parsed.nextQuestionOptions.filter(
+          (o: { textTargetLang?: unknown }) =>
+            typeof o?.textTargetLang === 'string' && o.textTargetLang.trim()
+        );
+      }
+      if (Array.isArray(parsed.patientQuickAnswerHints)) {
+        parsed.patientQuickAnswerHints = parsed.patientQuickAnswerHints.filter(
+          (h: { textTargetLang?: unknown }) =>
+            typeof h?.textTargetLang === 'string' && h.textTargetLang.trim()
+        );
+      }
       res.json({
         ok: true,
         model: GEMINI_MODEL,

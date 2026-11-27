@@ -1218,6 +1218,14 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
                       <span className="text-[10px] text-slate-200 line-clamp-1">
                         {opt.textThai}
                       </span>
+                      <span className="text-[11px] text-white line-clamp-2 mt-0.5">
+                        {opt.textTargetLang}
+                      </span>
+                      {opt.pronunciationHint && (
+                        <span className="text-[10px] text-cyan-200/90 italic line-clamp-1">
+                          อ่านว่า: {opt.pronunciationHint}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>

@@ -246,7 +246,8 @@ export const Overview: React.FC<OverviewProps> = ({
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 pt-3 pb-24 space-y-5 max-w-7xl mx-auto">
-      {/* Judge Demo Mode Switcher Bar */}
+      {/* Judge Demo Mode Switcher Bar (only while demo is active) */}
+      {isJudgeDemoActive && (
       <div className={`${glassSurface} rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/45 flex items-center justify-center text-amber-300">
@@ -292,6 +293,7 @@ export const Overview: React.FC<OverviewProps> = ({
           </button>
         </div>
       </div>
+      )}
 
       {/* Lightweight Isolated 5 Core Modules Bar (iPad-Friendly: loads only active module) */}
       <div className={`${glassSurface} rounded-2xl p-3.5 border border-cyan-300/25 space-y-2.5`}>

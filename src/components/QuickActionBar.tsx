@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Languages, Tv, Inbox, ClipboardList, Stethoscope } from 'lucide-react';
 import { ActiveTab } from '../types/dental';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -41,13 +41,22 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
   accessibleTabIds
 }) => {
   const { t } = useLanguage();
+  const [open, setOpen] = useState(true);
 
   return (
     <nav
       aria-label={t('quickBarAria')}
       className="shrink-0 flex items-center gap-2 px-3 py-2 overflow-x-auto no-scrollbar border-b border-white/10 bg-slate-950/40"
     >
-      {ACTIONS.filter((a) => a.onModal || (a.tab && accessibleTabIds.includes(a.tab))).map(
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="inline-flex items-center min-h-[44px] px-3 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold text-slate-100 shrink-0"
+      >
+        {open ? 'ซ่อนเมนู ▲' : 'เมนูด่วน ▼'}
+      </button>
+      {open && ACTIONS.filter((a) => a.onModal || (a.tab && accessibleTabIds.includes(a.tab))).map(
         (a) => {
           const Icon = a.icon;
           const isActive = a.tab !== undefined && activeTab === a.tab;
@@ -69,7 +78,7 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
           );
         }
       )}
-      <HybridAiBadge />
+      {open && <HybridAiBadge />}
     </nav>
   );
 };

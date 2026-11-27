@@ -245,6 +245,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   const [noteContent, setNoteContent] = useState('');
   const [noteReminder, setNoteReminder] = useState('');
   const [noteType, setNoteType] = useState<'note' | 'formula'>('note');
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<PrivateNote | null>(null);
   const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState<string | null>(null);
   const [confirmClearNotes, setConfirmClearNotes] = useState(false);
@@ -770,10 +771,10 @@ export const TaskList: React.FC<TaskListProps> = ({
 
       {/* Top Action Bar & Module Submenus */}
       <div className={`rounded-2xl p-5 shadow-lg space-y-4 ${cardSurface}`}>
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
+        <div className="flex flex-col gap-3">
+          <div className="w-full min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-semibold text-slate-100">
+              <h2 className="text-base font-semibold text-slate-100 break-words">
                 {t('myClinicalTasks')} ({formatNumberByLanguage(tasks.length, language)})
               </h2>
               <span
@@ -787,9 +788,17 @@ export const TaskList: React.FC<TaskListProps> = ({
                 {isClinic ? t('teamAssignedBadge') : t('privateVaultBadge')}
               </span>
             </div>
-            <p className="text-xs text-slate-300/80 mt-0.5">{t('tasksSubtitle')}</p>
+            <p className="text-xs text-slate-300/80 mt-0.5 break-words">{t('tasksSubtitle')}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActionsOpen((v) => !v)}
+            aria-expanded={actionsOpen}
+            className="crystal-tile self-start inline-flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-xl border border-white/15 text-xs font-semibold text-slate-100 cursor-pointer"
+          >
+            <span>{actionsOpen ? 'ซ่อนเมนูฟังก์ชัน ▲' : 'แสดงเมนูฟังก์ชัน ▼'}</span>
+          </button>
+          <div className={`${actionsOpen ? 'flex' : 'hidden'} flex-wrap items-center gap-2 w-full`}>
             {tasks.length > 0 && (
               !confirmClearTasks ? (
                 <button

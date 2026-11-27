@@ -327,6 +327,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Instant Judge Demo Mode Toggle (Next to TH/EN for 1-tap access on iPad/Desktop) */}
+        {isJudgeDemoActive && (
         <button
           type="button"
           onClick={toggleJudgeDemoMode}
@@ -353,6 +354,7 @@ export const Header: React.FC<HeaderProps> = ({
             {isJudgeDemoActive ? t('judgeDemoExitMicroBtn') : t('judgeDemoHeaderMicroBtn')}
           </span>
         </button>
+        )}
 
         {/* Language Switcher TH/EN */}
         <LanguageSwitcher />

@@ -160,7 +160,40 @@ async function createApp() {
     if (!QUEUE_CODE_RE.test(code)) return res.status(400).json({ error: 'invalid code' });
     res.set('Cache-Control', 'no-store');
     const entry = queueRelay.get(code);
-    res.json({ items: entry?.items ?? null, ts: entry?.ts ?? 0 });
+    res.json({ items: entry?.items ?? null, ts: entry?.ts ?? 0, pending: queuePending.get(code) ?? [] });
+  });
+
+  // Counter -> iPad direction: the counter PC adds names here, the assistant's iPad takes them.
+  const queuePending = new Map<string, Array<{ id: string; patientName: string; procedure: string; queueNumber: string; createdAt: string }>>();
+  const cleanText = (v: unknown, max: number) =>
+    typeof v === 'string' ? v.replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max) : '';
+
+  app.post('/api/queue/:code/pending', (req: Request, res: Response) => {
+    const code = String(req.params.code || '');
+    if (!QUEUE_CODE_RE.test(code)) return res.status(400).json({ error: 'invalid code' });
+    const patientName = cleanText(req.body?.patientName, 80);
+    if (!patientName) return res.status(400).json({ error: 'patientName required' });
+    const list = queuePending.get(code) ?? [];
+    if (list.length >= 100) return res.status(429).json({ error: 'too many pending' });
+    const item = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      patientName,
+      procedure: cleanText(req.body?.procedure, 80),
+      queueNumber: cleanText(req.body?.queueNumber, 12).toUpperCase(),
+      createdAt: new Date().toISOString()
+    };
+    list.push(item);
+    queuePending.set(code, list);
+    res.json({ ok: true, item });
+  });
+
+  // Atomic take: returns and clears pending so two iPads never import the same name twice.
+  app.post('/api/queue/:code/take', (req: Request, res: Response) => {
+    const code = String(req.params.code || '');
+    if (!QUEUE_CODE_RE.test(code)) return res.status(400).json({ error: 'invalid code' });
+    const list = queuePending.get(code) ?? [];
+    queuePending.delete(code);
+    res.json({ items: list });
   });
 
   app.post('/api/extract', async (req: Request, res: Response) => {

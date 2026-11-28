@@ -219,6 +219,18 @@ export const QueueManager: React.FC<QueueManagerProps> = ({
     setEditingQueue(null);
   };
 
+  const [copiedCounterLink, setCopiedCounterLink] = useState(false);
+  const handleCopyCounterLink = async () => {
+    const url = `${window.location.origin}/?counter=1&code=${encodeURIComponent(getTvCode())}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // clipboard may be blocked
+    }
+    setCopiedCounterLink(true);
+    setTimeout(() => setCopiedCounterLink(false), 2500);
+  };
+
   const handleCopyTvLink = async () => {
     const url = `${window.location.origin}/?tv=1&code=${encodeURIComponent(getTvCode())}`;
     try {
@@ -381,6 +393,13 @@ export const QueueManager: React.FC<QueueManagerProps> = ({
             <span>{copiedTvLink ? t('queueTvCopiedMsg') : t('queueTvCopyLinkBtn')}</span>
           </button>
           <span className="text-[11px] text-slate-300 font-mono">รหัสจอ: {getTvCode()}</span>
+          <button
+            type="button"
+            onClick={() => void handleCopyCounterLink()}
+            className="crystal-tile min-h-[44px] px-3 rounded-xl border border-white/20 text-xs font-semibold text-slate-100 cursor-pointer"
+          >
+            {copiedCounterLink ? 'คัดลอกแล้ว' : 'คัดลอกลิงก์หน้าลงคิวเคาน์เตอร์'}
+          </button>
 
           <button
             type="button"

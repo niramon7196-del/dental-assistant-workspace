@@ -1,4 +1,4 @@
-import { publishQueue } from '../services/queueRelay';
+import { publishQueue, takePendingRemote, getTvCode } from '../services/queueRelay';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DentureCase,
@@ -816,6 +816,37 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     },
     [activeWorkspace.id]
   );
+
+  // Counter -> iPad: import names typed at the counter PC (every 3s, only while this tab is visible).
+  useEffect(() => {
+    if (isJudgeDemoActive) return;
+    let stop = false;
+    const tick = async () => {
+      if (document.visibilityState === 'hidden') return;
+      const entries = await takePendingRemote(getTvCode());
+      if (stop || entries.length === 0) return;
+      setQueueItems((prev) => {
+        let n = prev.length;
+        const added = entries.map((e) => {
+          n += 1;
+          return {
+            id: `q-r-${e.id}`,
+            queueNumber: e.queueNumber || `A${String(n).padStart(2, '0')}`,
+            patientName: e.patientName,
+            procedure: e.procedure || 'ตรวจรักษาทางทันตกรรม',
+            status: 'waiting' as const,
+            createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16)
+          };
+        });
+        return [...prev, ...added];
+      });
+    };
+    const id = window.setInterval(() => void tick(), 3000);
+    return () => {
+      stop = true;
+      window.clearInterval(id);
+    };
+  }, [isJudgeDemoActive, setQueueItems]);
 
   const setLabOrders: React.Dispatch<React.SetStateAction<LabOrder[]>> = useCallback(
     (updater) => {

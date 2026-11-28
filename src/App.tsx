@@ -20,6 +20,7 @@ import {
   isModuleAccessible
 } from './modules/moduleRegistry';
 import { TranslationKey } from './utils/i18n';
+import { CounterQueuePage } from './components/CounterQueuePage';
 
 const Overview = lazy(() =>
   import('./components/Overview').then((m) => ({ default: m.Overview }))
@@ -126,10 +127,11 @@ export default function App() {
   } = useWorkspace();
 
   const tvQueryState = useMemo(() => {
-    if (typeof window === 'undefined') return { isTv: false, wsId: '', code: '' };
+    if (typeof window === 'undefined') return { isTv: false, isCounter: false, wsId: '', code: '' };
     const params = new URLSearchParams(window.location.search);
     return {
       isTv: params.get('tv') === '1',
+      isCounter: params.get('counter') === '1',
       wsId: params.get('ws') || '',
       code: params.get('code') || ''
     };
@@ -208,6 +210,11 @@ export default function App() {
       setActiveTabState('overview');
     }
   }, [isActiveTabSupported, activeWorkspace.id]);
+
+  // Counter PC queue entry page (?counter=1&code=...)
+  if (tvQueryState.isCounter && tvQueryState.code) {
+    return <CounterQueuePage code={tvQueryState.code} />;
+  }
 
   // Standalone Smart TV Queue Display Mode (?tv=1&ws=...)
   if (tvQueryState.isTv) {

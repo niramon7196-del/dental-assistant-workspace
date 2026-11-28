@@ -76,3 +76,57 @@ export function buildCallSentence(patientName: string, room: string, lang: 'th' 
   }
   return `ขอเชิญคุณ ${name} เข้า${r} ค่ะ`;
 }
+
+export interface PendingQueueEntry {
+  id: string;
+  patientName: string;
+  procedure: string;
+  queueNumber: string;
+  createdAt: string;
+}
+
+/** Counter PC: add a name; the assistant's iPad will pick it up. */
+export async function addPendingRemote(
+  code: string,
+  data: { patientName: string; procedure?: string; queueNumber?: string }
+): Promise<boolean> {
+  try {
+    const r = await fetch(`/api/queue/${encodeURIComponent(code)}/pending`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** iPad: take (and clear) names added from the counter. */
+export async function takePendingRemote(code: string): Promise<PendingQueueEntry[]> {
+  try {
+    const r = await fetch(`/api/queue/${encodeURIComponent(code)}/take`, { method: 'POST' });
+    if (!r.ok) return [];
+    const j = await r.json();
+    return Array.isArray(j.items) ? (j.items as PendingQueueEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Counter PC: read current queue + names still waiting for the iPad. */
+export async function fetchRelayState(
+  code: string
+): Promise<{ items: QueueItem[]; pending: PendingQueueEntry[] } | null> {
+  try {
+    const r = await fetch(`/api/queue/${encodeURIComponent(code)}`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return {
+      items: Array.isArray(j.items) ? (j.items as QueueItem[]) : [],
+      pending: Array.isArray(j.pending) ? (j.pending as PendingQueueEntry[]) : []
+    };
+  } catch {
+    return null;
+  }
+}

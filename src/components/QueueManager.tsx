@@ -82,7 +82,7 @@ export const QueueManager: React.FC<QueueManagerProps> = ({
     const spokenSentence =
       language === 'en'
         ? `Calling ${item.patientName}, queue ${item.queueNumber}, please proceed to ${room}`
-        : `ขอเชิญคุณ ${item.patientName.replace(/^คุณ\s*/i, '')} หมายเลขคิว ${item.queueNumber} เข้า ${room} ค่ะ`;
+        : `ขอเชิญคุณ ${item.patientName.replace(/^คุณ\s*/i, '')} หมายเลขคิว ${item.queueNumber.split('').join(' ')} เข้า ${room} ค่ะ`;
 
     setLastSpoken(spokenSentence);
     if (!voiceEnabled || typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -93,7 +93,7 @@ export const QueueManager: React.FC<QueueManagerProps> = ({
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(spokenSentence);
       utterance.lang = language === 'en' ? 'en-US' : 'th-TH';
-      utterance.rate = 0.95;
+      utterance.rate = 0.8;
       utterance.pitch = 1.0;
       const voices = window.speechSynthesis.getVoices();
       const thaiVoice = voices.find((v) => v.lang.toLowerCase().startsWith('th'));

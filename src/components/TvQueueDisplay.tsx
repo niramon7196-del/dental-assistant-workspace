@@ -89,6 +89,69 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
 
   // Cross-device sync: poll the server relay every 2s (counter PC shows what the iPad publishes)
   const [soundOn, setSoundOn] = useState(false);
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [voiceName, setVoiceName] = useState<string>(() => {
+    try {
+      return localStorage.getItem('growthlab.tvVoice.name') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [voiceRate, setVoiceRate] = useState<number>(() => {
+    try {
+      const v = parseFloat(localStorage.getItem('growthlab.tvVoice.rate') || '');
+      return Number.isFinite(v) ? v : 0.8;
+    } catch {
+      return 0.8;
+    }
+  });
+  const [voiceRepeat, setVoiceRepeat] = useState<number>(() => {
+    try {
+      return localStorage.getItem('growthlab.tvVoice.repeat') === '1' ? 1 : 2;
+    } catch {
+      return 2;
+    }
+  });
+  const saveVoicePref = (k: string, v: string) => {
+    try {
+      localStorage.setItem(`growthlab.tvVoice.${k}`, v);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+    const load = () => setVoices(window.speechSynthesis.getVoices());
+    load();
+    window.speechSynthesis.addEventListener?.('voiceschanged', load);
+    return () => window.speechSynthesis.removeEventListener?.('voiceschanged', load);
+  }, []);
+
+  const thaiVoices = voices.filter((v) => v.lang.toLowerCase().startsWith('th'));
+  const voiceChoices = thaiVoices.length > 0 ? thaiVoices : voices;
+
+  const speakText = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const all = window.speechSynthesis.getVoices();
+      const chosen =
+        all.find((v) => v.name === voiceName) ||
+        all.find((v) => v.lang.toLowerCase().startsWith(language === 'en' ? 'en' : 'th'));
+      for (let i = 0; i < voiceRepeat; i += 1) {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = language === 'en' ? 'en-US' : 'th-TH';
+        u.rate = voiceRate;
+        u.volume = 1;
+        if (chosen) u.voice = chosen;
+        window.speechSynthesis.speak(u);
+      }
+    } catch {
+      // ignore
+    }
+  };
   const spokenRef = React.useRef<string>('');
   const firstPollRef = React.useRef(true);
   useEffect(() => {
@@ -122,22 +185,13 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
     if (sig === spokenRef.current) return;
     spokenRef.current = sig;
     if (!soundOn || !('speechSynthesis' in window)) return;
-    try {
-      const room = latest.roomName || '';
-      const text =
-        language === 'en'
-          ? `Calling ${latest.patientName}, queue ${latest.queueNumber}, please proceed to ${room}`
-          : `ขอเชิญคุณ ${latest.patientName.replace(/^คุณ\s*/i, '')} หมายเลขคิว ${latest.queueNumber} เข้า ${room} ค่ะ`;
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = language === 'en' ? 'en-US' : 'th-TH';
-      u.rate = 0.95;
-      const th = window.speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith('th'));
-      if (th && language === 'th') u.voice = th;
-      window.speechSynthesis.speak(u);
-    } catch {
-      // ignore
-    }
+    const room = latest.roomName || '';
+    const text =
+      language === 'en'
+        ? `Calling ${latest.patientName}, queue number ${latest.queueNumber}, please proceed to ${room}`
+        : `ขอเชิญคุณ ${latest.patientName.replace(/^คุณ\s*/i, '')} หมายเลขคิว ${latest.queueNumber.split('').join(' ')} เข้า ${room} ค่ะ`;
+    speakText(text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveItems, soundOn, language]);
 
   const toggleFullscreen = async () => {
@@ -201,6 +255,14 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
 
           <button
             type="button"
+            onClick={() => setShowVoiceSettings((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl crystal-tile border border-white/20 text-sm font-semibold text-slate-100 cursor-pointer"
+          >
+            <span>ตั้งค่าเสียง</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => void toggleFullscreen()}
             className="p-3 rounded-2xl crystal-tile hover:bg-white/15 text-slate-100 cursor-pointer"
             title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
@@ -220,6 +282,77 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
           )}
         </div>
       </div>
+
+      {showVoiceSettings && (
+        <div className="crystal-tile rounded-2xl border border-white/25 p-4 mb-4 grid gap-3 sm:grid-cols-3 text-sm text-slate-100">
+          <label className="grid gap-1">
+            <span className="font-semibold">เสียงผู้พูด</span>
+            <select
+              value={voiceName}
+              onChange={(e) => {
+                setVoiceName(e.target.value);
+                saveVoicePref('name', e.target.value);
+              }}
+              className="glass-input min-h-[44px] px-3 rounded-xl"
+            >
+              <option value="">อัตโนมัติ (ค่าเริ่มต้นของเครื่อง)</option>
+              {voiceChoices.map((v) => (
+                <option key={v.name} value={v.name}>
+                  {v.name} ({v.lang})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1">
+            <span className="font-semibold">ความเร็ว: {voiceRate.toFixed(2)} (ยิ่งน้อยยิ่งช้าและชัด)</span>
+            <input
+              type="range"
+              min={0.5}
+              max={1.1}
+              step={0.05}
+              value={voiceRate}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                setVoiceRate(v);
+                saveVoicePref('rate', String(v));
+              }}
+              className="min-h-[44px]"
+            />
+          </label>
+          <div className="grid gap-1">
+            <span className="font-semibold">จำนวนครั้งที่พูด</span>
+            <div className="flex gap-2">
+              {[1, 2].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => {
+                    setVoiceRepeat(n);
+                    saveVoicePref('repeat', String(n));
+                  }}
+                  className={`min-h-[44px] px-4 rounded-xl border font-semibold cursor-pointer ${
+                    voiceRepeat === n ? 'bg-violet-600/80 border-violet-300/60' : 'crystal-tile border-white/20'
+                  }`}
+                >
+                  {n} ครั้ง
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => speakText('ขอเชิญคุณ ทดสอบ หมายเลขคิว เอ ศูนย์ สี่ เข้าห้อง หนึ่ง ค่ะ')}
+                className="min-h-[44px] px-4 rounded-xl bg-emerald-600/80 border border-emerald-300/60 font-semibold cursor-pointer"
+              >
+                ลองฟัง
+              </button>
+            </div>
+          </div>
+          {voices.length === 0 && (
+            <p className="sm:col-span-3 text-amber-200 text-xs">
+              ยังไม่พบเสียงในเบราว์เซอร์นี้ ลองกด "ลองฟัง" หรือรีเฟรชหน้าอีกครั้ง
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Main Display Area */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 py-8 items-stretch">

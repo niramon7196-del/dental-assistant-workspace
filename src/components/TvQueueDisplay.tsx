@@ -134,33 +134,47 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
 
   const speakText = (text: string) => {
     if (!('speechSynthesis' in window)) return;
+    const synth = window.speechSynthesis;
     try {
-      window.speechSynthesis.cancel();
-      const all = window.speechSynthesis.getVoices();
-      const chosen =
-        all.find((v) => v.name === voiceName) ||
-        all.find((v) => v.lang.toLowerCase().startsWith(language === 'en' ? 'en' : 'th'));
-      for (let i = 0; i < voiceRepeat; i += 1) {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = language === 'en' ? 'en-US' : 'th-TH';
-        u.rate = voiceRate;
-        u.volume = 1;
-        if (chosen) u.voice = chosen;
-        window.speechSynthesis.speak(u);
-      }
+      synth.cancel();
+      synth.resume();
     } catch {
       // ignore
     }
+    // Chrome/Edge can drop an utterance queued in the same tick as cancel(); wait a beat.
+    window.setTimeout(() => {
+      try {
+        const all = synth.getVoices();
+        const chosen =
+          all.find((v) => v.name === voiceName) ||
+          all.find((v) => v.lang.toLowerCase().startsWith(language === 'en' ? 'en' : 'th'));
+        for (let i = 0; i < voiceRepeat; i += 1) {
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = language === 'en' ? 'en-US' : 'th-TH';
+          u.rate = voiceRate;
+          u.volume = 1;
+          if (chosen) u.voice = chosen;
+          synth.speak(u);
+        }
+        synth.resume();
+      } catch {
+        // ignore
+      }
+    }, 150);
   };
+
   const spokenRef = React.useRef<string>('');
   const firstPollRef = React.useRef(true);
   const remoteReadyRef = React.useRef(false);
+  const [syncInfo, setSyncInfo] = useState<{ ok: boolean; at: string }>({ ok: true, at: '' });
   useEffect(() => {
     if (!relayCode) return;
     let stop = false;
     const tick = async () => {
       const remote = await fetchRemoteQueue(relayCode);
-      if (stop || !remote) return;
+      if (stop) return;
+      setSyncInfo({ ok: !!remote, at: new Date().toLocaleTimeString('th-TH') });
+      if (!remote) return;
       remoteReadyRef.current = true;
       setLiveItems(remote);
     };
@@ -245,6 +259,11 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
             <Clock className="w-5 h-5 text-violet-300" />
             <span>{nowClock}</span>
           </div>
+          {relayCode && (
+            <span className={`text-xs font-semibold ${syncInfo.ok ? 'text-emerald-200' : 'text-rose-200'}`}>
+              {syncInfo.ok ? `ซิงก์ล่าสุด ${syncInfo.at}` : 'ติดต่อเซิร์ฟเวอร์ไม่ได้'}
+            </span>
+          )}
 
           <button
             type="button"

@@ -129,6 +129,21 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
   const [langOther, setLangOther] = useState(false);
   const [caseOther, setCaseOther] = useState(false);
   const [showPatientQuick, setShowPatientQuick] = useState(false);
+  // Lock the page behind the modal so swiping inside scrolls the chat, not the background app.
+  useEffect(() => {
+    const els: HTMLElement[] = [document.body];
+    const main = document.querySelector('main');
+    if (main instanceof HTMLElement) els.push(main);
+    const prev = els.map((el) => el.style.overflow);
+    els.forEach((el) => {
+      el.style.overflow = 'hidden';
+    });
+    return () => {
+      els.forEach((el, i) => {
+        el.style.overflow = prev[i];
+      });
+    };
+  }, []);
   /** read = patient reads the screen (works for every language); voice = speak/listen (languages with device voices). */
   const [mode, setMode] = useState<'read' | 'voice'>('read');
 
@@ -738,7 +753,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
       aria-modal="true"
       aria-label="Chairside Language Copilot"
     >
-      <div className="glass-modal w-full max-w-5xl h-[92dvh] max-h-[92dvh] rounded-2xl flex flex-col overflow-hidden text-slate-100">
+      <div className="glass-modal w-full max-w-5xl h-[94dvh] max-h-[94dvh] rounded-2xl flex flex-col overflow-hidden overscroll-contain text-slate-100">
         {/* Header */}
         <div className="px-4 sm:px-5 py-3 border-b border-white/20 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -982,7 +997,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
         </div>
 
         {/* Clinical Summary Strip (Thai) when gathered */}
-        {session.clinicalSummaryThai && (
+        {mode === 'voice' && session.clinicalSummaryThai && (
           <div className="px-4 sm:px-5 py-2 border-b border-white/15 bg-emerald-500/10 flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-start gap-2 min-w-0">
               <Stethoscope className="w-3.5 h-3.5 text-emerald-300 shrink-0 mt-0.5" />
@@ -1038,7 +1053,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
         {/* Persistent Conversation Scroll Area */}
         <div
           ref={chatScrollRef}
-          className="flex-1 min-h-[30vh] overflow-y-auto overscroll-contain px-4 sm:px-5 py-3 space-y-3"
+          className="flex-1 min-h-[22vh] overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch] px-4 sm:px-5 py-3 space-y-3"
         >
           {session.messages.length === 0 ? (
             <div className="crystal-tile rounded-2xl border border-dashed border-cyan-300/35 p-6 text-center space-y-3 my-4">
@@ -1194,7 +1209,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
 
         {/* AI Recommended Next Reply + Sequential Options + Patient Quick Chips */}
         {session.caseStarted && (
-          <div className={`px-4 sm:px-5 py-2.5 border-t border-white/15 space-y-2 ${mode === 'read' ? 'max-h-[26vh]' : 'max-h-[34vh]'} overflow-y-auto shrink-0`}>
+          <div className={`px-4 sm:px-5 py-2.5 border-t border-white/15 space-y-2 ${mode === 'read' ? 'max-h-[22vh]' : 'max-h-[30vh]'} overflow-y-auto overscroll-contain touch-pan-y shrink-0`}>
             {/* Recommended AI next turn (when patient just replied) */}
             {session.recommendedReply &&
               session.messages[session.messages.length - 1]?.role === 'patient' && (

@@ -1,4 +1,4 @@
-import { getTvCode } from '../services/queueRelay';
+import { getTvCode, buildCallSentence } from '../services/queueRelay';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -79,10 +79,7 @@ export const QueueManager: React.FC<QueueManagerProps> = ({
   const [confirmClearQueue, setConfirmClearQueue] = useState(false);
 
   const speakThaiCall = (item: QueueItem, room: string) => {
-    const spokenSentence =
-      language === 'en'
-        ? `Calling ${item.patientName}, queue ${item.queueNumber}, please proceed to ${room}`
-        : `ขอเชิญคุณ ${item.patientName.replace(/^คุณ\s*/i, '')} หมายเลขคิว ${item.queueNumber.split('').join(' ')} เข้า ${room} ค่ะ`;
+    const spokenSentence = buildCallSentence(item.patientName, room, language === 'en' ? 'en' : 'th');
 
     setLastSpoken(spokenSentence);
     if (!voiceEnabled || typeof window === 'undefined' || !('speechSynthesis' in window)) {

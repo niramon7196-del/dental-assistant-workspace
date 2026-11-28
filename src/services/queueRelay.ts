@@ -55,3 +55,24 @@ export async function fetchRemoteQueue(code: string): Promise<QueueItem[] | null
     return null;
   }
 }
+
+/** "ห้อง 1 (Room 1)" -> "ห้องตรวจ 1"; custom names keep their Thai part only. */
+export function spokenRoomName(room: string): string {
+  const base = (room || '').replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+  const m = base.match(/^ห้อง\s*(?:ตรวจ\s*)?(\d+)$/);
+  if (m) return `ห้องตรวจ ${m[1]}`;
+  const e = base.match(/^room\s*(\d+)/i);
+  if (e) return `ห้องตรวจ ${e[1]}`;
+  return base;
+}
+
+/** Spoken call: "ขอเชิญคุณ ... เข้าห้องตรวจ 1 ค่ะ" (no queue number). */
+export function buildCallSentence(patientName: string, room: string, lang: 'th' | 'en'): string {
+  const name = (patientName || '').replace(/^คุณ\s*/i, '').trim();
+  const r = spokenRoomName(room);
+  if (lang === 'en') {
+    const num = r.match(/(\d+)$/)?.[1];
+    return `${name}, please proceed to ${num ? `examination room ${num}` : r}`;
+  }
+  return `ขอเชิญคุณ ${name} เข้า${r} ค่ะ`;
+}

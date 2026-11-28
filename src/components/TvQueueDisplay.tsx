@@ -3,7 +3,7 @@ import { MonitorPlay, Maximize2, Minimize2, Volume2, X, Clock, ArrowRight } from
 import { QueueItem } from '../types/dental';
 import { useLanguage } from '../contexts/LanguageContext';
 import { readQueueItemsDirect } from '../services/workspaceStorage';
-import { fetchRemoteQueue } from '../services/queueRelay';
+import { fetchRemoteQueue, buildCallSentence } from '../services/queueRelay';
 import { formatNumberByLanguage } from '../utils/i18n';
 
 interface TvQueueDisplayProps {
@@ -185,11 +185,7 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
     if (sig === spokenRef.current) return;
     spokenRef.current = sig;
     if (!soundOn || !('speechSynthesis' in window)) return;
-    const room = latest.roomName || '';
-    const text =
-      language === 'en'
-        ? `Calling ${latest.patientName}, queue number ${latest.queueNumber}, please proceed to ${room}`
-        : `ขอเชิญคุณ ${latest.patientName.replace(/^คุณ\s*/i, '')} หมายเลขคิว ${latest.queueNumber.split('').join(' ')} เข้า ${room} ค่ะ`;
+    const text = buildCallSentence(latest.patientName, latest.roomName || '', language === 'en' ? 'en' : 'th');
     speakText(text);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveItems, soundOn, language]);
@@ -339,7 +335,7 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
               ))}
               <button
                 type="button"
-                onClick={() => speakText('ขอเชิญคุณ ทดสอบ หมายเลขคิว เอ ศูนย์ สี่ เข้าห้อง หนึ่ง ค่ะ')}
+                onClick={() => speakText(buildCallSentence('ทดสอบ', 'ห้อง 1', 'th'))}
                 className="min-h-[44px] px-4 rounded-xl bg-emerald-600/80 border border-emerald-300/60 font-semibold cursor-pointer"
               >
                 ลองฟัง

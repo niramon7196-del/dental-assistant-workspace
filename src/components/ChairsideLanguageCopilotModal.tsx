@@ -7,6 +7,7 @@ import {
   Languages,
   Loader2,
   Maximize2,
+  Minimize2,
   Mic,
   MicOff,
   RotateCcw,
@@ -129,6 +130,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
   const [langOther, setLangOther] = useState(false);
   const [caseOther, setCaseOther] = useState(false);
   const [showPatientQuick, setShowPatientQuick] = useState(false);
+  const [isFull, setIsFull] = useState(false);
   // Lock the page behind the modal so swiping inside scrolls the chat, not the background app.
   useEffect(() => {
     const els: HTMLElement[] = [document.body];
@@ -748,12 +750,12 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-4 bg-slate-950/65"
+      className={`fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 ${isFull ? 'p-0' : 'p-2 sm:p-4'}`}
       role="dialog"
       aria-modal="true"
       aria-label="Chairside Language Copilot"
     >
-      <div className="glass-modal w-full max-w-5xl h-[94dvh] max-h-[94dvh] rounded-2xl flex flex-col overflow-hidden overscroll-contain text-slate-100">
+      <div className={`glass-modal w-full flex flex-col overflow-hidden overscroll-contain text-slate-100 ${isFull ? 'max-w-none h-[100dvh] max-h-[100dvh] rounded-none' : 'max-w-5xl h-[94dvh] max-h-[94dvh] rounded-2xl'}`}>
         {/* Header */}
         <div className="px-4 sm:px-5 py-3 border-b border-white/20 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -824,6 +826,15 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
               </div>
             )}
 
+            <button
+              type="button"
+              onClick={() => setIsFull((v) => !v)}
+              aria-pressed={isFull}
+              className="crystal-tile inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-xl text-xs font-semibold text-slate-100 hover:text-white cursor-pointer"
+            >
+              {isFull ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              <span>{isFull ? 'ย่อหน้าต่าง' : 'เต็มจอ'}</span>
+            </button>
             <button
               type="button"
               onClick={() => {

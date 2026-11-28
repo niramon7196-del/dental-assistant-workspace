@@ -129,6 +129,8 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
   const [langOther, setLangOther] = useState(false);
   const [caseOther, setCaseOther] = useState(false);
   const [showPatientQuick, setShowPatientQuick] = useState(false);
+  /** read = patient reads the screen (works for every language); voice = speak/listen (languages with device voices). */
+  const [mode, setMode] = useState<'read' | 'voice'>('read');
 
   const recognitionRef = useRef<SpeechRecognitionInstanceLike | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
@@ -939,6 +941,44 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
               {!hasSpeechRecognition ? ' · ไมค์ไม่รองรับ ใช้การพิมพ์แทน' : ''}
             </span>
           </div>
+
+          {/* Mode switch: reading vs voice dialogue */}
+          <div className="grid grid-cols-2 gap-2" role="tablist" aria-label="โหมดสื่อสาร">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'read'}
+              onClick={() => {
+                stopAllSpeech();
+                setMode('read');
+              }}
+              className={`min-h-[44px] rounded-xl border text-xs font-bold cursor-pointer ${
+                mode === 'read'
+                  ? 'bg-gradient-to-r from-cyan-600 to-sky-600 text-white border-cyan-300/60'
+                  : 'crystal-tile text-slate-200 border-white/20'
+              }`}
+            >
+              📖 โหมดอ่าน — ให้คนไข้อ่านจอ (ได้ทุกภาษา)
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'voice'}
+              onClick={() => setMode('voice')}
+              className={`min-h-[44px] rounded-xl border text-xs font-bold cursor-pointer ${
+                mode === 'voice'
+                  ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white border-violet-300/60'
+                  : 'crystal-tile text-slate-200 border-white/20'
+              }`}
+            >
+              🎙️ โหมดเสียงโต้ตอบ — พูด/ฟัง
+            </button>
+          </div>
+          {mode === 'voice' && (!hasSpeechSynthesis || !matchingTargetVoice) && (
+            <p className="text-[11px] text-amber-200">
+              ภาษานี้ไม่มีเสียงอ่านในเครื่อง โหมดเสียงจะอ่านออกเสียงไม่ได้ แนะนำสลับไปโหมดอ่าน
+            </p>
+          )}
         </div>
 
         {/* Clinical Summary Strip (Thai) when gathered */}
@@ -998,7 +1038,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
         {/* Persistent Conversation Scroll Area */}
         <div
           ref={chatScrollRef}
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-5 py-3 space-y-3"
+          className="flex-1 min-h-[30vh] overflow-y-auto overscroll-contain px-4 sm:px-5 py-3 space-y-3"
         >
           {session.messages.length === 0 ? (
             <div className="crystal-tile rounded-2xl border border-dashed border-cyan-300/35 p-6 text-center space-y-3 my-4">
@@ -1050,7 +1090,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
                             onClick={() =>
                               handleSpeakText(msg.id, msg.textTargetLang, 'target')
                             }
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-semibold cursor-pointer ${
+                            className={`${mode === 'voice' ? 'inline-flex' : 'hidden'} items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-semibold cursor-pointer ${
                               isSpeaking
                                 ? 'bg-rose-500/25 border-rose-300/55 text-rose-100'
                                 : 'bg-cyan-500/20 border-cyan-300/40 text-cyan-100 hover:bg-cyan-500/30'
@@ -1082,12 +1122,12 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
                       </div>
 
                       {/* Target language message (Large, crisp for patient) */}
-                      <p className="text-sm sm:text-base font-semibold text-white leading-relaxed">
+                      <p className={`${mode === 'read' ? 'text-xl sm:text-3xl leading-snug' : 'text-sm sm:text-base leading-relaxed'} font-semibold text-white`}>
                         {msg.textTargetLang}
                       </p>
 
                       {msg.pronunciationHint && (
-                        <p className="text-[11px] text-cyan-200/90 italic">
+                        <p className={`${mode === 'read' ? 'text-sm sm:text-lg' : 'text-[11px]'} text-cyan-200/90 italic`}>
                           คำอ่านช่วยออกเสียง: {msg.pronunciationHint}
                         </p>
                       )}
@@ -1154,7 +1194,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
 
         {/* AI Recommended Next Reply + Sequential Options + Patient Quick Chips */}
         {session.caseStarted && (
-          <div className="px-4 sm:px-5 py-2.5 border-t border-white/15 space-y-2 max-h-[34vh] overflow-y-auto shrink-0">
+          <div className={`px-4 sm:px-5 py-2.5 border-t border-white/15 space-y-2 ${mode === 'read' ? 'max-h-[26vh]' : 'max-h-[34vh]'} overflow-y-auto shrink-0`}>
             {/* Recommended AI next turn (when patient just replied) */}
             {session.recommendedReply &&
               session.messages[session.messages.length - 1]?.role === 'patient' && (
@@ -1280,7 +1320,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
               type="button"
               onClick={() => handleToggleMic('patient')}
               title={`ไมค์คนไข้ (${resolvedLang.displayName})`}
-              className={`px-2.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 ${
+              className={`px-2.5 py-2 rounded-xl border text-xs font-semibold ${mode === 'voice' ? 'inline-flex' : 'hidden'} items-center gap-1 cursor-pointer shrink-0 ${
                 activeMicRole === 'patient'
                   ? 'bg-rose-600 border-rose-300 text-white'
                   : 'crystal-tile border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/20'
@@ -1318,7 +1358,7 @@ export const ChairsideLanguageCopilotModal: React.FC<ChairsideLanguageCopilotMod
               type="button"
               onClick={() => handleToggleMic('assistant')}
               title="ไมค์ผู้ช่วย (ภาษาไทย)"
-              className={`px-2.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 ${
+              className={`px-2.5 py-2 rounded-xl border text-xs font-semibold ${mode === 'voice' ? 'inline-flex' : 'hidden'} items-center gap-1 cursor-pointer shrink-0 ${
                 activeMicRole === 'assistant'
                   ? 'bg-rose-600 border-rose-300 text-white'
                   : 'crystal-tile border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/20'

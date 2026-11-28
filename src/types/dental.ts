@@ -78,6 +78,8 @@ export interface QueueItem {
   attachmentEvidenceId?: string;
   createdAt: string;
   calledAt?: string;
+  /** Millisecond timestamp of the latest call (lets TV detect re-calls and same-minute calls). */
+  calledAtMs?: number;
 }
 
 export type LabWorkType = 'Denture' | 'Crown' | 'Retainer' | 'Surgical Guide' | 'Other';

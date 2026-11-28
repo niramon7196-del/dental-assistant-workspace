@@ -50,7 +50,7 @@ export async function fetchRemoteQueue(code: string): Promise<QueueItem[] | null
     const r = await fetch(`/api/queue/${encodeURIComponent(code)}`, { cache: 'no-store' });
     if (!r.ok) return null;
     const j = await r.json();
-    return Array.isArray(j.items) ? (j.items as QueueItem[]) : null;
+    return Array.isArray(j.items) ? (j.items as QueueItem[]) : [];
   } catch {
     return null;
   }

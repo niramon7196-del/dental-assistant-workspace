@@ -154,12 +154,14 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
   };
   const spokenRef = React.useRef<string>('');
   const firstPollRef = React.useRef(true);
+  const remoteReadyRef = React.useRef(false);
   useEffect(() => {
     if (!relayCode) return;
     let stop = false;
     const tick = async () => {
       const remote = await fetchRemoteQueue(relayCode);
       if (stop || !remote) return;
+      remoteReadyRef.current = true;
       setLiveItems(remote);
     };
     void tick();
@@ -170,23 +172,29 @@ export const TvQueueDisplay: React.FC<TvQueueDisplayProps> = ({
     };
   }, [relayCode]);
 
-  // Speak newly called queue on the TV/PC (needs one tap on "เปิดเสียง" because of browser autoplay rules)
+  // Speak the queue item whose call just changed (works for same-minute calls and re-calls)
+  const prevCallKeysRef = React.useRef<Record<string, string>>({});
   useEffect(() => {
-    const latest = liveItems
-      .filter((q) => q.status === 'called')
-      .sort((a, b) => (b.calledAt || '').localeCompare(a.calledAt || ''))[0];
-    if (!latest) return;
-    const sig = `${latest.id}|${latest.calledAt || ''}`;
-    if (firstPollRef.current) {
-      firstPollRef.current = false;
-      spokenRef.current = sig;
+    const keys: Record<string, string> = {};
+    const changed: QueueItem[] = [];
+    liveItems.forEach((q) => {
+      if (q.status !== 'called') return;
+      const key = String(q.calledAtMs ?? q.calledAt ?? '1');
+      keys[q.id] = key;
+      if (prevCallKeysRef.current[q.id] !== key) changed.push(q);
+    });
+    const isFirst = firstPollRef.current;
+    prevCallKeysRef.current = keys;
+    if (isFirst) {
+      // Only baseline once real data exists (avoid speaking old calls on page open)
+      if (!relayCode || remoteReadyRef.current) firstPollRef.current = false;
       return;
     }
-    if (sig === spokenRef.current) return;
-    spokenRef.current = sig;
-    if (!soundOn || !('speechSynthesis' in window)) return;
-    const text = buildCallSentence(latest.patientName, latest.roomName || '', language === 'en' ? 'en' : 'th');
-    speakText(text);
+    if (changed.length === 0 || !soundOn || !('speechSynthesis' in window)) return;
+    const latest = changed.sort((a, b) => (b.calledAtMs ?? 0) - (a.calledAtMs ?? 0))[0];
+    speakText(
+      buildCallSentence(latest.patientName, latest.roomName || '', language === 'en' ? 'en' : 'th')
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveItems, soundOn, language]);
 

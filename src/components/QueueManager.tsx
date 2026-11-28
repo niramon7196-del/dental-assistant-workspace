@@ -178,7 +178,8 @@ export const QueueManager: React.FC<QueueManagerProps> = ({
               ...q,
               status,
               roomName: status === 'called' ? myRoom : q.roomName,
-              calledAt: status === 'called' ? nowTime : q.calledAt
+              calledAt: status === 'called' ? nowTime : q.calledAt,
+              calledAtMs: status === 'called' ? Date.now() : q.calledAtMs
             }
           : q
       )
